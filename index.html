@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <meta name="theme-color" content="#1e3a5f">
+  <meta name="description" content="Duka Lite Genius - POS smart kwa wauzaji wadogo Tanzania">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Duka%20Lite%20Genius%22,%22short_name%22:%22Duka%20Lite%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%231e3a5f%22,%22theme_color%22:%22%231e3a5f%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Crect%20width='100'%20height='100'%20fill='%231e3a5f'/%3E%3Ctext%20x='50'%20y='67'%20font-size='50'%20text-anchor='middle'%20fill='white'%3E🛒%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22any%22,%22type%22:%22image/svg+xml%22}]}">
+  <title>Duka Lite Genius 3.0 | POS ya Tanzania | PDF + M-Pesa + VAT</title>
+  <!-- html5-qrcode for QR scanning -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- jspdf for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --primary: #1e3a5f;
+      --primary-dark: #0f2a45;
+      --primary-light: #2c5a8c;
+      --secondary: #e67e22;
+      --success: #27ae60;
+      --danger: #e74c3c;
+      --warning: #f39c12;
+      --info: #3498db;
+      --purple: #8e44ad;
+      --teal: #1abc9c;
+      --light: #f8f9fa;
+      --dark: #2c3e50;
+      --gray: #7f8c8d;
+      --border: #e0e0e0;
+      --gold: #f1c40f;
+    }
+
+    body {
+      font-family: -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+      padding: 12px;
+      padding-bottom: 70px;
+      min-height: 100vh;
+    }
+
+    .container { max-width: 550px; margin: 0 auto; }
+
+    /* Header with shine effect */
+    .header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 16px;
+      border-radius: 24px;
+      margin-bottom: 16px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      position: relative;
+      overflow: hidden;
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -60%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+      animation: shine 8s infinite;
+    }
+    @keyframes shine { 0% { transform: translateX(-100%) rotate(0deg); } 100% { transform: translateX(100%) rotate(0deg); } }
+    .header h1 { font-size: 22px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .header p { font-size: 11px; opacity: 0.9; margin-top: 4px; }
+
+    /* Language Toggle */
+    .lang-toggle { display: flex; justify-content: flex-end; margin-bottom: 12px; gap: 8px; }
+    .lang-btn { padding: 6px 14px; border: none; border-radius: 40px; font-weight: 600; background: white; color: var(--primary); cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .lang-btn.active { background: var(--primary); color: white; }
+
+    /* Stats cards with glassmorphism */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      padding: 14px;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+    .stat-value { font-size: 22px; font-weight: bold; background: linear-gradient(135deg, var(--primary), var(--primary-light)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .stat-label { font-size: 10px; color: var(--gray); margin-top: 4px; }
+
+    /* Target section */
+    .target-section {
+      background: white;
+      padding: 14px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .progress-bar { background: #e0e0e0; border-radius: 20px; height: 10px; overflow: hidden; margin: 8px 0; }
+    .progress-fill { background: linear-gradient(90deg, var(--success), #2ecc71); width: 0%; height: 100%; transition: width 0.3s; }
+
+    /* Monthly Summary Cards */
+    .monthly-summary {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .month-card {
+      background: white;
+      padding: 12px;
+      border-radius: 16px;
+      text-align: center;
+    }
+    .month-card .month-name { font-size: 12px; color: var(--gray); }
+    .month-card .month-amount { font-size: 18px; font-weight: bold; color: var(--primary); }
+
+    /* TABS - Each with unique color */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      background: white;
+      padding: 6px;
+      border-radius: 50px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 8px;
+      z-index: 100;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px 4px;
+      border: none;
+      background: transparent;
+      border-radius: 40px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: var(--gray);
+    }
+    .tab-btn[data-panel="sale"].active { background: linear-gradient(135deg, var(--success), #219a52); color: white; box-shadow: 0 4px 12px rgba(39,174,96,0.4); }
+    .tab-btn[data-panel="products"].active { background: linear-gradient(135deg, var(--info), #2980b9); color: white; box-shadow: 0 4px 12px rgba(52,152,219,0.4); }
+    .tab-btn[data-panel="history"].active { background: linear-gradient(135deg, var(--purple), #7d3c98); color: white; box-shadow: 0 4px 12px rgba(142,68,173,0.4); }
+    .tab-btn[data-panel="settings"].active { background: linear-gradient(135deg, var(--teal), #16a085); color: white; box-shadow: 0 4px 12px rgba(26,188,156,0.4); }
+    .tab-btn[data-panel="reports"].active { background: linear-gradient(135deg, var(--gold), #d4a017); color: white; box-shadow: 0 4px 12px rgba(241,196,15,0.4); }
+    .tab-btn:hover:not(.active) { background: var(--light); }
+
+    .panel { display: none; animation: fadeIn 0.3s ease; }
+    .panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card {
+      background: white;
+      border-radius: 24px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+      transition: all 0.2s;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-left: 14px;
+      border-left: 4px solid var(--primary);
+    }
+
+    #salePanel .card { border-top: 3px solid var(--success); }
+    #productsPanel .card { border-top: 3px solid var(--info); }
+    #historyPanel .card { border-top: 3px solid var(--purple); }
+    #settingsPanel .card { border-top: 3px solid var(--teal); }
+    #reportsPanel .card { border-top: 3px solid var(--gold); }
+
+    .search-input {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid var(--border);
+      border-radius: 60px;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+    .search-input:focus { outline: none; border-color: var(--success); box-shadow: 0 0 0 3px rgba(39,174,96,0.2); }
+
+    .qr-scanner { background: #000; border-radius: 20px; overflow: hidden; margin-bottom: 12px; display: none; }
+    .qr-scanner.active { display: block; }
+
+    .unit-buttons { display: flex; gap: 10px; margin-bottom: 16px; }
+    .unit-btn {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid var(--border);
+      background: white;
+      border-radius: 60px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .unit-btn.active { background: var(--success); border-color: var(--success); color: white; }
+
+    .payment-methods {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .payment-btn {
+      flex: 1;
+      min-width: calc(33% - 8px);
+      padding: 10px 6px;
+      border: 2px solid var(--border);
+      background: white;
+      border-radius: 40px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 11px;
+    }
+    .payment-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+
+    .total-display {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 18px;
+      border-radius: 24px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .total-display .amount { font-size: 32px; font-weight: bold; }
+
+    .action-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
+    .action-buttons button { flex: 1; padding: 14px; border: none; border-radius: 60px; font-weight: 600; cursor: pointer; transition: 0.2s; min-width: 100px; }
+    .btn-save { background: var(--success); color: white; }
+    .btn-clear { background: var(--gray); color: white; }
+    .btn-print { background: var(--warning); color: white; }
+
+    .product-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .product-item:hover { background: var(--light); border-radius: 16px; }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 550px;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(20px);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 16px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+      z-index: 100;
+      max-width: 550px;
+      margin: 0 auto;
+      border-top: 1px solid rgba(255,255,255,0.5);
+    }
+    .bottom-nav-btn {
+      background: none;
+      border: none;
+      padding: 8px;
+      flex: 1;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray);
+      transition: all 0.2s;
+      border-radius: 30px;
+    }
+    .bottom-nav-btn.active { background: var(--primary); color: white; }
+
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--dark);
+      color: white;
+      padding: 10px 22px;
+      border-radius: 40px;
+      font-size: 13px;
+      z-index: 200;
+      display: none;
+      white-space: nowrap;
+    }
+    .badge { background: var(--warning); color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; display: inline-block; }
+    .flex { display: flex; gap: 10px; flex-wrap: wrap; }
+    .w-100 { width: 100%; }
+    .text-center { text-align: center; }
+    .mt-2 { margin-top: 10px; }
+
+    @media (max-width: 480px) { body { padding: 10px; padding-bottom: 70px; } .stat-value { font-size: 18px; } .action-buttons button { padding: 10px; font-size: 12px; } }
+
+    /* LOGIN SCREEN */
+    #loginScreen {
+      position: fixed; inset: 0;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 9999; padding: 24px;
+    }
+    #loginScreen h2 { color: white; font-size: 26px; margin-bottom: 6px; }
+    #loginScreen p { color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 32px; }
+    .pin-dots { display: flex; gap: 14px; margin-bottom: 28px; }
+    .pin-dot { width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: background 0.2s; }
+    .pin-dot.filled { background: white; }
+    .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 260px; }
+    .pin-key {
+      background: rgba(255,255,255,0.15);
+      border: none; border-radius: 50%;
+      width: 72px; height: 72px;
+      font-size: 22px; font-weight: 700;
+      color: white; cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      margin: 0 auto;
+    }
+    .pin-key:active { background: rgba(255,255,255,0.35); transform: scale(0.93); }
+    .pin-key.del { font-size: 18px; background: rgba(255,100,100,0.25); }
+    .pin-key.ok { font-size: 16px; background: rgba(39,174,96,0.5); }
+    .pin-error { color: #ff6b6b; font-size: 13px; margin-top: 12px; min-height: 18px; }
+    .pin-setup-hint { color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 16px; text-align: center; }
+    #loginScreen.hidden { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div style="font-size:52px; margin-bottom:12px">🛒</div>
+  <h2>Duka Lite Genius</h2>
+  <p id="loginSubtitle">Ingiza PIN yako</p>
+  <div class="pin-dots" id="pinDots">
+    <div class="pin-dot" id="d0"></div>
+    <div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div>
+    <div class="pin-dot" id="d3"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-key" onclick="pinPress('1')">1</button>
+    <button class="pin-key" onclick="pinPress('2')">2</button>
+    <button class="pin-key" onclick="pinPress('3')">3</button>
+    <button class="pin-key" onclick="pinPress('4')">4</button>
+    <button class="pin-key" onclick="pinPress('5')">5</button>
+    <button class="pin-key" onclick="pinPress('6')">6</button>
+    <button class="pin-key" onclick="pinPress('7')">7</button>
+    <button class="pin-key" onclick="pinPress('8')">8</button>
+    <button class="pin-key" onclick="pinPress('9')">9</button>
+    <button class="pin-key del" onclick="pinDel()">⌫</button>
+    <button class="pin-key" onclick="pinPress('0')">0</button>
+    <button class="pin-key ok" onclick="pinSubmit()">✓</button>
+  </div>
+  <div class="pin-error" id="pinError"></div>
+  <div class="pin-setup-hint" id="pinHint"></div>
+</div>
+
+<div class="container">
+  <div class="lang-toggle">
+    <button class="lang-btn active" onclick="setLanguage('sw')">🇹🇿 Kiswahili</button>
+    <button class="lang-btn" onclick="setLanguage('en')">🇬🇧 English</button>
+  </div>
+
+  <div class="header">
+    <h1>🧠 Duka Lite Genius 3.0</h1>
+    <p class="header-desc" data-key="tagline">POS Smart - Tafuta, Chagua, Uza kwa Sekunde</p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-value" id="todaySales">0</div><div class="stat-label" data-key="todaySales">Mauzo Leo (TZS)</div></div>
+    <div class="stat-card"><div class="stat-value" id="todayProfit">0</div><div class="stat-label" data-key="todayProfit">Faida Leo</div></div>
+    <div class="stat-card"><div class="stat-value" id="totalSalesCount">0</div><div class="stat-label" data-key="totalSales">Jumla Mauzo</div></div>
+    <div class="stat-card"><div class="stat-value" id="totalProfit">0</div><div class="stat-label" data-key="totalProfit">Jumla Faida</div></div>
+  </div>
+
+  <!-- Monthly Summary -->
+  <div class="monthly-summary">
+    <div class="month-card"><div class="month-name" data-key="thisMonth">Mwezi Huu</div><div class="month-amount" id="thisMonthSales">0 TZS</div></div>
+    <div class="month-card"><div class="month-name" data-key="lastMonth">Mwezi Ulopita</div><div class="month-amount" id="lastMonthSales">0 TZS</div></div>
+  </div>
+
+  <div class="target-section">
+    <div class="flex" style="justify-content:space-between"><span data-key="dailyGoal">🎯 Lengo la Leo</span><span><span id="todayTargetAmount">0</span> / <span id="todayTargetGoal">100000</span> TZS</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="targetProgress"></div></div>
+    <div class="flex"><input type="number" id="targetInput" placeholder="Lengo la leo" value="100000" style="flex:2; padding:10px; border-radius:40px; border:1px solid var(--border)"><button onclick="setDailyTarget()" style="background:var(--primary); color:white; border:none; border-radius:40px; padding:0 20px">Weka</button></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-panel="sale">💰 Fanya Mauzo</button>
+    <button class="tab-btn" data-panel="products">📦 Bidhaa</button>
+    <button class="tab-btn" data-panel="history">📋 Historia</button>
+    <button class="tab-btn" data-panel="reports">📊 Ripoti</button>
+    <button class="tab-btn" data-panel="settings">⚙️ Mipangilio</button>
+  </div>
+
+  <!-- SALE PANEL -->
+  <div id="salePanel" class="panel active">
+    <div class="card">
+      <div class="card-title">🔍 Tafuta au Chagua Bidhaa</div>
+      <div class="search-wrapper"><input type="text" id="productSearch" class="search-input" placeholder="🔎 Tafuta bidhaa..." autocomplete="off"><div id="suggestions" class="suggestions" style="display:none; background:white; border-radius:16px; margin-top:4px; max-height:200px; overflow-y:auto; box-shadow:0 8px 20px rgba(0,0,0,0.15)"></div></div>
+      <button id="startQrScanBtn" class="btn-save w-100" style="background:var(--info); margin:10px 0">📷 Scan QR Code ya Bidhaa</button>
+      <div id="qrScanner" class="qr-scanner"></div>
+      <div class="unit-buttons"><button class="unit-btn" data-unit="Idadi">📦 Idadi</button><button class="unit-btn" data-unit="Uzito">⚖️ Uzito (kg)</button><button class="unit-btn" data-unit="Lita">💧 Lita (L)</button></div>
+      <div class="flex"><input type="number" id="saleQuantity" placeholder="Kiasi" value="1" step="0.01"><input type="number" id="salePrice" placeholder="Bei (TZS)" value="0"></div>
+      <div class="payment-methods">
+        <button class="payment-btn" data-payment="Cash">💵 Cash</button>
+        <button class="payment-btn" data-payment="M-Pesa">🟢 M-Pesa</button>
+        <button class="payment-btn" data-payment="Airtel Money">🔴 Airtel</button>
+        <button class="payment-btn" data-payment="Tigo Pesa">🔵 Tigo</button>
+        <button class="payment-btn" data-payment="Halopesa">🟡 Halo</button>
+      </div>
+      <div class="total-display"><div class="label">JUMLA YA MUUZO</div><div class="amount" id="saleTotalAmount">0 TZS</div></div>
+      <div class="action-buttons"><button id="saveSaleBtn" class="btn-save">✅ Hifadhi Mauzo</button><button id="clearSaleBtn" class="btn-clear">🗑️ Angaza</button><button id="printReceiptBtn" class="btn-print">🖨️ Chapisha</button></div>
+      <div class="text-center mt-2"><span class="badge" id="selectedProductBadge">Hakuna bidhaa iliyochaguliwa</span></div>
+    </div>
+    <div class="card" style="background:#e8f5e9"><div class="card-title" style="border-left-color:var(--success)">💡 Kidokezo cha Smart</div><div style="font-size:13px">• Anza kuandika jina la bidhaa - itakupendekeza<br>• Tumia QR Code kwa bidhaa za haraka<br>• Chagua namna ya malipo</div></div>
+  </div>
+
+  <!-- PRODUCTS PANEL -->
+  <div id="productsPanel" class="panel"><div class="card"><div class="card-title">➕ Ongeza Bidhaa Mpya</div><input type="text" id="newProductName" placeholder="Jina la bidhaa"><div class="flex"><input type="number" id="newProductPrice" placeholder="Bei ya kuuza (TZS)" style="flex:2"><input type="number" id="newProductCost" placeholder="Gharama" style="flex:1"></div><div class="flex"><input type="number" id="newProductStock" placeholder="Mkia" value="0" style="flex:1"><select id="newProductUnit" style="flex:1"><option value="Idadi">Idadi</option><option value="Uzito">Uzito (kg)</option><option value="Lita">Lita (L)</option></select></div><button onclick="addProduct()" class="btn-save w-100" style="background:var(--info)">➕ Weka Bidhaa</button></div><div class="card"><div class="card-title">📋 Orodha ya Bidhaa</div><div id="productListContainer"></div></div></div>
+
+  <!-- HISTORY PANEL -->
+  <div id="historyPanel" class="panel"><div class="card"><div class="card-title">📊 Historia ya Mauzo</div><div class="flex"><input type="date" id="filterDate" style="flex:2"><button onclick="filterSalesHistory()" class="btn-save" style="background:var(--purple)">Chuja</button><button onclick="exportSalesData()" class="btn-save" style="background:var(--info)">📥 Export JSON</button></div><div style="max-height:450px; overflow-y:auto"><table class="w-100" style="font-size:13px"><thead><tr><th>Bidhaa</th><th>Kiasi</th><th>Jumla</th><th>Malipo</th><th>Tarehe</th></tr></thead><tbody id="salesHistoryBody"></tbody></table></div></div></div>
+
+  <!-- REPORTS PANEL (NEW) -->
+  <div id="reportsPanel" class="panel"><div class="card"><div class="card-title">📊 Ripoti za Mauzo</div><div class="flex"><button onclick="exportToPDF()" class="btn-save" style="background:var(--gold); color:var(--dark)">📄 Export Ripoti PDF</button><button onclick="generateMonthlyReport()" class="btn-save" style="background:var(--info)">📈 Muhtasari wa Mwezi</button></div><div id="reportPreview" style="margin-top:16px; padding:12px; background:var(--light); border-radius:16px; font-size:13px"><p class="text-center">Bonyeza kitufe cha juu kuona ripoti</p></div></div></div>
+
+  <!-- SETTINGS PANEL -->
+  <div id="settingsPanel" class="panel"><div class="card"><div class="card-title">🏪 Taarifa za Duka</div><input type="text" id="shopName" placeholder="Jina la Duka (mfano: Duka la Mama Amina)" style="padding:10px; border-radius:40px; border:1px solid var(--border); width:100%; margin-bottom:8px"><input type="text" id="shopAddress" placeholder="Anwani ya Duka (mfano: Kariakoo, Dar es Salaam)" style="padding:10px; border-radius:40px; border:1px solid var(--border); width:100%; margin-bottom:8px"><input type="text" id="shopTIN" placeholder="TIN Number (kama una)" style="padding:10px; border-radius:40px; border:1px solid var(--border); width:100%; margin-bottom:8px"><input type="text" id="shopPhone" placeholder="Namba ya Simu ya Duka" style="padding:10px; border-radius:40px; border:1px solid var(--border); width:100%; margin-bottom:8px"><div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; padding:10px; background:var(--light); border-radius:16px"><input type="checkbox" id="vatEnabled" style="width:20px; height:20px"><label for="vatEnabled" style="font-weight:600">Weka VAT 18% (TRA)</label></div><button onclick="saveShopSettings()" class="btn-save w-100" style="background:var(--teal); margin-bottom:12px">💾 Hifadhi Taarifa za Duka</button></div><div class="card"><div class="card-title">⚙️ Mipangilio na Usimamizi</div><button onclick="backupData()" class="btn-save w-100" style="background:var(--teal); margin-bottom:8px">💾 Hifadhi Backup</button><button onclick="restoreData()" class="btn-clear w-100" style="margin-bottom:8px">🔄 Rejesha Backup</button><button onclick="clearAllData()" class="btn-clear w-100" style="background:var(--danger)">🗑️ Futa Data Zote</button><button onclick="installPWA()" class="btn-save w-100" style="background:var(--primary); margin-top:8px">📲 Sakinsha App (PWA)</button><button onclick="changePIN()" class="btn-save w-100" style="background:var(--purple); margin-top:8px">🔒 Badilisha PIN</button><div class="text-center mt-2"><span class="badge" id="storageStatus">✓ Offline Ready (IndexedDB + Service Worker)</span></div></div></div>
+</div>
+
+<div class="bottom-nav"><button class="bottom-nav-btn active" data-panel="sale">💰 Mauzo</button><button class="bottom-nav-btn" data-panel="products">📦 Bidhaa</button><button class="bottom-nav-btn" data-panel="history">📋 Historia</button><button class="bottom-nav-btn" data-panel="reports">📊 Ripoti</button><button class="bottom-nav-btn" data-panel="settings">⚙️</button></div>
+<div id="toast" class="toast"></div>
+
+<script>
+  // ============ INDEXEDDB SETUP ============
+  let db;
+  const DB_NAME = 'DukaLiteDB';
+  const DB_VERSION = 2;
+  let products = [], sales = [], dailyTarget = 100000;
+  let currentSelectedProduct = null, currentUnit = 'Idadi', currentPayment = 'Cash';
+  let qrScanner = null;
+  let currentLang = 'sw';
+  let deferredPrompt = null;
+
+  const translations = {
+    sw: { tagline: 'POS Smart ya Tanzania - Tafuta, Chagua, Uza kwa Sekunde', todaySales: 'Mauzo Leo (TZS)', todayProfit: 'Faida Leo', totalSales: 'Jumla Mauzo', totalProfit: 'Jumla Faida', dailyGoal: '🎯 Lengo la Leo', thisMonth: 'Mwezi Huu', lastMonth: 'Mwezi Ulopita' },
+    en: { tagline: 'Tanzania Smart POS - Search, Select, Sell in Seconds', todaySales: 'Today Sales (TZS)', todayProfit: 'Today Profit', totalSales: 'Total Sales', totalProfit: 'Total Profit', dailyGoal: '🎯 Daily Goal', thisMonth: 'This Month', lastMonth: 'Last Month' }
+  };
+
+  function setLanguage(lang) { currentLang = lang; document.querySelectorAll('[data-key]').forEach(el => { const key = el.dataset.key; if (translations[lang][key]) el.innerText = translations[lang][key]; }); document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active')); document.querySelector(`.lang-btn[onclick="setLanguage('${lang}')"]`).classList.add('active'); }
+  function showToast(msg, type='success') { const toast = document.getElementById('toast'); toast.innerText = msg; toast.style.background = type==='error'?'var(--danger)':type==='warning'?'var(--warning)':'var(--dark)'; toast.style.display='block'; setTimeout(()=>toast.style.display='none',2500); }
+
+  function openDB() { return new Promise((resolve, reject) => { const request = indexedDB.open(DB_NAME, DB_VERSION); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(request.result); request.onupgradeneeded = (e) => { const db = e.target.result; if(!db.objectStoreNames.contains('products')) db.createObjectStore('products', { keyPath: 'id' }); if(!db.objectStoreNames.contains('sales')) db.createObjectStore('sales', { keyPath: 'id', autoIncrement: true }); if(!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' }); }; }); }
+
+  async function loadDataFromDB() { db = await openDB(); const tx = db.transaction(['products', 'sales', 'settings'], 'readonly'); products = (await getAllFromStore(tx.objectStore('products'))) || []; sales = (await getAllFromStore(tx.objectStore('sales'))) || []; const targetSetting = await getSetting('dailyTarget'); dailyTarget = targetSetting || 100000; if(products.length === 0) { products = [{ id: '1', name: 'Mkate', price: 1500, cost: 1200, stock: 50, unit: 'Idadi' },{ id: '2', name: 'Maziwa (Lita)', price: 2500, cost: 2000, stock: 30, unit: 'Lita' },{ id: '3', name: 'Sukari (Kg)', price: 3200, cost: 2600, stock: 40, unit: 'Uzito' },{ id: '4', name: 'Chumvi', price: 500, cost: 350, stock: 60, unit: 'Idadi' },{ id: '5', name: 'Mayai', price: 700, cost: 550, stock: 100, unit: 'Idadi' },{ id: '6', name: 'Mchele (Kg)', price: 3500, cost: 2800, stock: 80, unit: 'Uzito' },{ id: '7', name: 'Unga wa Ngano (Kg)', price: 2800, cost: 2200, stock: 50, unit: 'Uzito' },{ id: '8', name: 'Mafuta ya Kupikia (Lita)', price: 7500, cost: 6000, stock: 25, unit: 'Lita' },{ id: '9', name: 'Sabuni ya Kufulia', price: 1000, cost: 750, stock: 40, unit: 'Idadi' },{ id: '10', name: 'Soda (Chupa)', price: 1500, cost: 1100, stock: 48, unit: 'Idadi' },{ id: '11', name: 'Chai (100g)', price: 2000, cost: 1500, stock: 20, unit: 'Idadi' }]; await saveProductsToDB(); } refreshAllUI(); renderSalesHistory(); updateMonthlySummary(); }
+  function getAllFromStore(store) { return new Promise((resolve) => { const items = []; const cursor = store.openCursor(); cursor.onsuccess = (e) => { const cursor = e.target.result; if(cursor) { items.push(cursor.value); cursor.continue(); } else resolve(items); }; }); }
+  function getSetting(key) { return new Promise((resolve) => { const tx = db.transaction('settings', 'readonly'); const req = tx.objectStore('settings').get(key); req.onsuccess = () => resolve(req.result ? req.result.value : null); }); }
+  async function saveProductsToDB() { const tx = db.transaction('products', 'readwrite'); const store = tx.objectStore('products'); store.clear(); products.forEach(p => store.put(p)); await tx.done; }
+  async function saveSalesToDB() { const tx = db.transaction('sales', 'readwrite'); const store = tx.objectStore('sales'); store.clear(); sales.forEach(s => store.put(s)); await tx.done; }
+  async function setDailyTarget() { const val = parseInt(document.getElementById('targetInput').value); if(val>0){ dailyTarget=val; const tx=db.transaction('settings','readwrite'); tx.objectStore('settings').put({key:'dailyTarget', value:val}); await tx.done; updateDashboard(); showToast('Lengo limewekwa!','success'); } }
+
+  function updateMonthlySummary() {
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+    const lastYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+    
+    let thisMonthTotal = 0, lastMonthTotal = 0;
+    sales.forEach(sale => {
+      const saleDate = new Date(sale.date);
+      if(saleDate.getMonth() === thisMonth && saleDate.getFullYear() === thisYear) thisMonthTotal += sale.total;
+      if(saleDate.getMonth() === lastMonth && saleDate.getFullYear() === lastYear) lastMonthTotal += sale.total;
+    });
+    document.getElementById('thisMonthSales').innerText = thisMonthTotal.toLocaleString() + ' TZS';
+    document.getElementById('lastMonthSales').innerText = lastMonthTotal.toLocaleString() + ' TZS';
+  }
+
+  function refreshAllUI() { updateDashboard(); renderProductList(); updateSuggestionsList(); updateUnitButtonsActive(); calculateTotal(); updateMonthlySummary(); }
+  function updateDashboard() { const today = new Date().toISOString().slice(0,10); let todayTotal=0,todayCost=0,totalAll=0,totalCostAll=0; sales.forEach(sale=>{ totalAll+=sale.total; totalCostAll+=(sale.cost||0); if(sale.date===today){ todayTotal+=sale.total; todayCost+=(sale.cost||0); } }); document.getElementById('todaySales').innerText=todayTotal.toLocaleString(); document.getElementById('todayProfit').innerText=(todayTotal-todayCost).toLocaleString(); document.getElementById('totalSalesCount').innerText=totalAll.toLocaleString(); document.getElementById('totalProfit').innerText=(totalAll-totalCostAll).toLocaleString(); const progress=Math.min((todayTotal/dailyTarget)*100,100); document.getElementById('targetProgress').style.width=progress+'%'; document.getElementById('todayTargetAmount').innerText=todayTotal.toLocaleString(); document.getElementById('todayTargetGoal').innerText=dailyTarget.toLocaleString(); }
+  function renderProductList() { const container=document.getElementById('productListContainer'); if(!container) return; container.innerHTML=''; products.forEach(p=>{ const div=document.createElement('div'); div.className='product-item'; div.innerHTML=`<div><div class="name">${escapeHtml(p.name)}</div><div class="price">${p.price.toLocaleString()} TZS</div><div class="stock">Mkia: ${p.stock} ${p.unit}</div></div><div><button onclick="editStock('${p.id}')" style="background:var(--info); color:white; border:none; padding:6px 12px; border-radius:30px">📦</button><button onclick="deleteProduct('${p.id}')" style="background:var(--danger); color:white; border:none; padding:6px 12px; border-radius:30px">🗑️</button></div>`; container.appendChild(div); }); }
+  function updateSuggestionsList() { const term=document.getElementById('productSearch').value.toLowerCase(); const div=document.getElementById('suggestions'); if(!term){ div.style.display='none'; return; } const filtered=products.filter(p=>p.name.toLowerCase().includes(term)); if(filtered.length===0){ div.style.display='none'; return; } div.style.display='block'; div.innerHTML=filtered.map(p=>`<div class="suggestion-item" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer" onclick="selectProduct('${p.id}')"><strong>${escapeHtml(p.name)}</strong><br>${p.price.toLocaleString()} TZS | Mkia: ${p.stock}</div>`).join(''); }
+  function selectProduct(id){ const p=products.find(p=>p.id===id); if(!p) return; currentSelectedProduct=p; document.getElementById('productSearch').value=p.name; document.getElementById('salePrice').value=p.price; document.getElementById('selectedProductBadge').innerHTML=`✓ ${p.name} imechaguliwa | ${p.price} TZS`; document.getElementById('selectedProductBadge').style.background='var(--success)'; currentUnit=p.unit; updateUnitButtonsActive(); document.getElementById('suggestions').style.display='none'; calculateTotal(); showToast(`${p.name} imechaguliwa`,'success'); }
+  function updateUnitButtonsActive(){ document.querySelectorAll('.unit-btn').forEach(btn=>{ if(btn.dataset.unit===currentUnit) btn.classList.add('active'); else btn.classList.remove('active'); }); }
+  function calculateTotal(){ const qty=parseFloat(document.getElementById('saleQuantity').value)||0; const price=parseFloat(document.getElementById('salePrice').value)||0; const total=qty*price; document.getElementById('saleTotalAmount').innerText=total.toLocaleString()+' TZS'; return total; }
+  
+  async function saveSale(){ const productName=document.getElementById('productSearch').value.trim(); const qty=parseFloat(document.getElementById('saleQuantity').value); const price=parseFloat(document.getElementById('salePrice').value); if(!productName || !qty || qty<=0 || !price || price<=0){ showToast('Tafadhali jaza bidhaa, kiasi na bei','error'); return; } let product=null, productCost=0; if(currentSelectedProduct && currentSelectedProduct.name===productName){ product=currentSelectedProduct; productCost=product.cost||0; if(product.stock<qty){ showToast(`Mkia haitoshi! Ipo: ${product.stock}`,'error'); return; } product.stock-=qty; await saveProductsToDB(); } else { const existing=products.find(p=>p.name.toLowerCase()===productName.toLowerCase()); if(existing){ product=existing; productCost=existing.cost||0; if(existing.stock<qty){ showToast(`Mkia haitoshi`,'error'); return; } existing.stock-=qty; await saveProductsToDB(); } } const total=qty*price; const today=new Date().toISOString().slice(0,10); sales.push({ id:Date.now(), productName, qty, unit:currentUnit, price, total, cost:productCost*qty, payment:currentPayment, date:today, time:new Date().toLocaleTimeString() }); await saveSalesToDB(); document.getElementById('productSearch').value=''; document.getElementById('saleQuantity').value='1'; document.getElementById('salePrice').value='0'; currentSelectedProduct=null; document.getElementById('selectedProductBadge').innerHTML='Hakuna bidhaa iliyochaguliwa'; refreshAllUI(); renderSalesHistory(); showToast(`✅ Mauzo ya ${productName} yamehifadhiwa! Jumla: ${total.toLocaleString()} TZS`,'success'); }
+  
+  function printReceipt(){ const productName=document.getElementById('productSearch').value.trim(); const qty=document.getElementById('saleQuantity').value; const priceVal=parseFloat(document.getElementById('salePrice').value)||0; const total=qty*priceVal; if(!productName){ showToast('Hakuna bidhaa ya kuchapisha','error'); return; } const shopNameVal=localStorage.getItem('shopName')||'DUKA LITE GENIUS'; const shopAddr=localStorage.getItem('shopAddress')||'Tanzania'; const shopTINVal=localStorage.getItem('shopTIN')||''; const shopPhoneVal=localStorage.getItem('shopPhone')||''; const vatOn=localStorage.getItem('vatEnabled')==='true'; const vatAmt=vatOn?Math.round(total*18/118):0; const subtotal=vatOn?total-vatAmt:total; const receiptNo='REC-'+Date.now().toString().slice(-6); const w=window.open('','_blank','width=400,height=600'); w.document.write(`<html><head><title>Stakabadhi</title><style>body{font-family:monospace;text-align:center;padding:20px;font-size:13px}hr{border:1px dashed #ccc}.left{text-align:left}.row{display:flex;justify-content:space-between}</style></head><body><h2>${shopNameVal}</h2><p>${shopAddr}</p>${shopPhoneVal?'<p>Simu: '+shopPhoneVal+'</p>':''}${shopTINVal?'<p>TIN: '+shopTINVal+'</p>':''}<hr><p><strong>STAKABADHI #${receiptNo}</strong></p><p>Tarehe: ${new Date().toLocaleString('sw-TZ')}</p><p>Malipo: ${currentPayment}</p><hr><div class="row"><span>${productName}</span><span></span></div><div class="row"><span>${qty} x ${priceVal.toLocaleString()} TZS</span><span>${total.toLocaleString()} TZS</span></div><hr>${vatOn?'<div class="row"><span>Subtotal</span><span>'+subtotal.toLocaleString()+' TZS</span></div><div class="row"><span>VAT 18% (TRA)</span><span>'+vatAmt.toLocaleString()+' TZS</span></div><hr>':''}<div class="row"><strong><span>JUMLA</span><span>${total.toLocaleString()} TZS</span></strong></div><hr><p>Asante kwa kununua!</p><p style="font-size:11px">Kumbuka risiti yako</p></body></html>`); w.print(); }
+  
+  async function addProduct(){ const name=document.getElementById('newProductName').value.trim(); const price=parseFloat(document.getElementById('newProductPrice').value); const cost=parseFloat(document.getElementById('newProductCost').value)||0; const stock=parseFloat(document.getElementById('newProductStock').value)||0; const unit=document.getElementById('newProductUnit').value; if(!name || isNaN(price) || price<=0){ showToast('Jaza jina na bei sahihi','error'); return; } const existing=products.find(p=>p.name.toLowerCase()===name.toLowerCase()); if(existing){ if(confirm('Bidhaa ipo. Unataka kuibadilisha?')){ existing.price=price; existing.cost=cost; existing.stock=stock; existing.unit=unit; } } else { products.push({ id:Date.now().toString(), name, price, cost, stock, unit }); } await saveProductsToDB(); document.getElementById('newProductName').value=''; document.getElementById('newProductPrice').value=''; document.getElementById('newProductCost').value=''; document.getElementById('newProductStock').value='0'; refreshAllUI(); showToast(`Bidhaa "${name}" imeongezwa`,'success'); }
+  async function deleteProduct(id){ if(confirm('Futa bidhaa hii?')){ products=products.filter(p=>p.id!==id); await saveProductsToDB(); refreshAllUI(); showToast('Bidhaa imefutwa','warning'); } }
+  async function editStock(id){ const p=products.find(p=>p.id===id); const newStock=prompt(`Mkia mpya wa ${p.name}:`,p.stock); if(newStock !== null && !isNaN(parseFloat(newStock))){ p.stock=parseFloat(newStock); await saveProductsToDB(); refreshAllUI(); } }
+  
+  function renderSalesHistory(filterDate=null){ const tbody=document.getElementById('salesHistoryBody'); if(!tbody) return; tbody.innerHTML=''; let filtered=[...sales]; if(filterDate) filtered=filtered.filter(s=>s.date===filterDate); filtered.reverse().slice(0,100).forEach(s=>{ tbody.innerHTML+=`<tr><td>${escapeHtml(s.productName)}</td><td>${s.qty} ${s.unit||''}</td><td>${s.total.toLocaleString()}</td><td>${s.payment || 'Cash'}</td><td>${s.date}</td></tr>`; }); if(filtered.length===0) tbody.innerHTML='<tr><td colspan="5" class="text-center">Hakuna mauzo</td></tr>'; }
+  function filterSalesHistory(){ renderSalesHistory(document.getElementById('filterDate').value); }
+  function exportSalesData(){ const dataStr=JSON.stringify(sales,null,2); const blob=new Blob([dataStr],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`duka_sales_${new Date().toISOString().slice(0,10)}.json`; a.click(); showToast('Data imeexport','success'); }
+  
+  async function exportToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text('DUKA LITE GENIUS - RIPOTI YA MAUZO', 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Tarehe: ${new Date().toLocaleString()}`, 14, 30);
+    let y = 40;
+    doc.text('Bidhaa', 14, y);
+    doc.text('Kiasi', 80, y);
+    doc.text('Jumla', 120, y);
+    doc.text('Malipo', 160, y);
+    let totalAll = 0;
+    sales.slice(-20).reverse().forEach(s => {
+      y += 8;
+      if(y > 270) { doc.addPage(); y = 20; }
+      doc.text(s.productName.substring(0,15), 14, y);
+      doc.text(`${s.qty} ${s.unit||''}`, 80, y);
+      doc.text(`${s.total.toLocaleString()}`, 120, y);
+      doc.text(s.payment || 'Cash', 160, y);
+      totalAll += s.total;
+    });
+    y += 12;
+    doc.setFontSize(12);
+    doc.text(`JUMLA KUU: ${totalAll.toLocaleString()} TZS`, 14, y);
+    doc.save(`ripoti_mauzo_${new Date().toISOString().slice(0,10)}.pdf`);
+    showToast('PDF imeundwa!','success');
+  }
+  
+  function generateMonthlyReport() {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    let monthTotal = 0;
+    sales.forEach(sale => {
+      const saleDate = new Date(sale.date);
+      if(saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear) monthTotal += sale.total;
+    });
+    document.getElementById('reportPreview').innerHTML = `<div style="text-align:center"><strong>📊 MUHTASARI WA MWEA HUU</strong><br><br>Jumla ya Mauzo: <strong style="color:var(--success); font-size:20px">${monthTotal.toLocaleString()} TZS</strong><br>Idadi ya mauzo: ${sales.filter(s => new Date(s.date).getMonth() === currentMonth).length}<br><br>📌 Tarehe: ${now.toLocaleDateString()}</div>`;
+    showToast('Muhtasari umeundwa','success');
+  }
+  
+  async function backupData(){ const backup={ products, sales, target:dailyTarget }; localStorage.setItem('duka_backup',JSON.stringify(backup)); showToast('Backup imehifadhiwa','success'); }
+  async function restoreData(){ const backup=localStorage.getItem('duka_backup'); if(backup){ const data=JSON.parse(backup); products=data.products||[]; sales=data.sales||[]; dailyTarget=data.target||100000; await saveProductsToDB(); await saveSalesToDB(); const tx=db.transaction('settings','readwrite'); tx.objectStore('settings').put({key:'dailyTarget',value:dailyTarget}); await tx.done; refreshAllUI(); renderSalesHistory(); showToast('Data imerejeshwa','success'); } else showToast('Hakuna backup','error'); }
+  async function clearAllData(){ if(confirm('UNAFUTA DATA ZOTE?')){ products=[]; sales=[]; dailyTarget=100000; await saveProductsToDB(); await saveSalesToDB(); const tx=db.transaction('settings','readwrite'); tx.objectStore('settings').clear(); await tx.done; refreshAllUI(); renderSalesHistory(); showToast('Data zote zimefutwa','warning'); } }
+  
+  function saveShopSettings(){ const name=document.getElementById('shopName').value.trim(); const addr=document.getElementById('shopAddress').value.trim(); const tin=document.getElementById('shopTIN').value.trim(); const phone=document.getElementById('shopPhone').value.trim(); const vat=document.getElementById('vatEnabled').checked; localStorage.setItem('shopName',name||'DUKA LITE GENIUS'); localStorage.setItem('shopAddress',addr); localStorage.setItem('shopTIN',tin); localStorage.setItem('shopPhone',phone); localStorage.setItem('vatEnabled',vat); showToast('Taarifa za duka zimehifadhiwa ✅','success'); }
+  function loadShopSettings(){ document.getElementById('shopName').value=localStorage.getItem('shopName')||''; document.getElementById('shopAddress').value=localStorage.getItem('shopAddress')||''; document.getElementById('shopTIN').value=localStorage.getItem('shopTIN')||''; document.getElementById('shopPhone').value=localStorage.getItem('shopPhone')||''; document.getElementById('vatEnabled').checked=localStorage.getItem('vatEnabled')==='true'; }
+
+  function installPWA() { if(deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(() => { deferredPrompt = null; }); } else { showToast('Sakinisha kwa menyu ya browser','info'); } }
+
+  // Payment method listeners
+  document.querySelectorAll('.payment-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentPayment = btn.dataset.payment;
+    });
+  });
+  document.querySelector('.payment-btn').classList.add('active');
+
+  // QR Code Scanner
+  document.getElementById('startQrScanBtn').addEventListener('click',()=>{ const scannerDiv=document.getElementById('qrScanner'); scannerDiv.classList.toggle('active'); if(scannerDiv.classList.contains('active')){ if(qrScanner) qrScanner.stop(); qrScanner=new Html5Qrcode("qrScanner"); qrScanner.start({ facingMode: "environment" }, { fps:10, qrbox:250 }, (decodedText)=>{ const product=products.find(p=>p.id===decodedText || p.name===decodedText); if(product) selectProduct(product.id); else showToast('Bidhaa haipatikani','error'); qrScanner.stop(); scannerDiv.classList.remove('active'); }, (err)=>{}); } else { if(qrScanner) qrScanner.stop(); } });
+
+  document.querySelectorAll('.unit-btn').forEach(btn=>btn.addEventListener('click',()=>{ currentUnit=btn.dataset.unit; updateUnitButtonsActive(); calculateTotal(); }));
+  document.getElementById('productSearch').addEventListener('input',updateSuggestionsList);
+  document.getElementById('saleQuantity').addEventListener('input',calculateTotal);
+  document.getElementById('salePrice').addEventListener('input',calculateTotal);
+  document.getElementById('saveSaleBtn').addEventListener('click',saveSale);
+  document.getElementById('clearSaleBtn').addEventListener('click',()=>{ document.getElementById('productSearch').value=''; document.getElementById('saleQuantity').value='1'; document.getElementById('salePrice').value='0'; currentSelectedProduct=null; calculateTotal(); showToast('Fomu imeangazwa','info'); });
+  document.getElementById('printReceiptBtn').addEventListener('click',printReceipt);
+
+  function switchPanel(panelId){ document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.getElementById(`${panelId}Panel`).classList.add('active'); document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); document.querySelector(`.tab-btn[data-panel="${panelId}"]`).classList.add('active'); document.querySelectorAll('.bottom-nav-btn').forEach(b=>b.classList.remove('active')); document.querySelector(`.bottom-nav-btn[data-panel="${panelId}"]`).classList.add('active'); if(panelId==='history') renderSalesHistory(); if(panelId==='products') renderProductList(); if(panelId==='reports') generateMonthlyReport(); }
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>switchPanel(btn.dataset.panel)));
+  document.querySelectorAll('.bottom-nav-btn').forEach(btn=>btn.addEventListener('click',()=>switchPanel(btn.dataset.panel)));
+  document.addEventListener('click',(e)=>{ if(!e.target.closest('.search-wrapper')) document.getElementById('suggestions').style.display='none'; });
+
+  // PWA install prompt
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
+
+  function escapeHtml(str){ if(!str) return ''; return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m; }); }
+
+  // ============ PIN LOGIN ============
+  let pinBuffer = '';
+  let pinMode = 'login'; // 'login' | 'setup' | 'confirm'
+  let pinSetupFirst = '';
+
+  function pinInit() {
+    const saved = localStorage.getItem('dukaPin');
+    if (!saved) {
+      pinMode = 'setup';
+      document.getElementById('loginSubtitle').innerText = 'Weka PIN mpya (nambari 4)';
+      document.getElementById('pinHint').innerText = 'Mara ya kwanza — chagua PIN yako ya siri';
+    } else {
+      pinMode = 'login';
+      document.getElementById('loginSubtitle').innerText = 'Ingiza PIN yako';
+    }
+  }
+
+  function pinUpdateDots() {
+    for (let i = 0; i < 4; i++) {
+      document.getElementById('d' + i).classList.toggle('filled', i < pinBuffer.length);
+    }
+  }
+
+  function pinPress(digit) {
+    if (pinBuffer.length >= 4) return;
+    pinBuffer += digit;
+    pinUpdateDots();
+    document.getElementById('pinError').innerText = '';
+    if (pinBuffer.length === 4) setTimeout(pinSubmit, 200);
+  }
+
+  function pinDel() {
+    pinBuffer = pinBuffer.slice(0, -1);
+    pinUpdateDots();
+    document.getElementById('pinError').innerText = '';
+  }
+
+  function pinSubmit() {
+    if (pinBuffer.length < 4) { document.getElementById('pinError').innerText = 'Weka nambari 4'; return; }
+    if (pinMode === 'login') {
+      const saved = localStorage.getItem('dukaPin');
+      if (pinBuffer === saved) {
+        document.getElementById('loginScreen').classList.add('hidden');
+      } else {
+        document.getElementById('pinError').innerText = '❌ PIN si sahihi. Jaribu tena.';
+        pinBuffer = ''; pinUpdateDots();
+      }
+    } else if (pinMode === 'setup') {
+      pinSetupFirst = pinBuffer;
+      pinBuffer = '';
+      pinUpdateDots();
+      pinMode = 'confirm';
+      document.getElementById('loginSubtitle').innerText = 'Rudia PIN yako';
+      document.getElementById('pinHint').innerText = 'Ingiza PIN hiyo hiyo tena kuthibitisha';
+    } else if (pinMode === 'confirm') {
+      if (pinBuffer === pinSetupFirst) {
+        localStorage.setItem('dukaPin', pinBuffer);
+        document.getElementById('loginScreen').classList.add('hidden');
+      } else {
+        document.getElementById('pinError').innerText = '❌ PIN hazilingani. Anza tena.';
+        pinBuffer = ''; pinSetupFirst = ''; pinMode = 'setup';
+        pinUpdateDots();
+        document.getElementById('loginSubtitle').innerText = 'Weka PIN mpya (nambari 4)';
+        document.getElementById('pinHint').innerText = 'PIN hazikuwa sawa — jaribu tena';
+      }
+    }
+  }
+
+  // Change PIN from settings
+  function changePIN() {
+    localStorage.removeItem('dukaPin');
+    pinBuffer = ''; pinSetupFirst = ''; pinMode = 'setup';
+    pinUpdateDots();
+    document.getElementById('loginSubtitle').innerText = 'Weka PIN mpya (nambari 4)';
+    document.getElementById('pinHint').innerText = 'Chagua PIN yako mpya';
+    document.getElementById('pinError').innerText = '';
+    document.getElementById('loginScreen').classList.remove('hidden');
+  }
+
+  pinInit();
+
+  loadDataFromDB();
+  loadShopSettings();
+</script>
+</body>
+</html>
